@@ -1,32 +1,37 @@
 const express = require("express");
 const app = express();
-
 const bodyParser = require("body-parser");
-
-app.use(bodyParser.urlencoded({extended :  false}));
-app.use(bodyParser.json());
-
 const mongoose = require("mongoose");
 require("dotenv").config();
 const noteSchema = require("./models/note");
-
 const moment = require("moment-timezone");
 
+
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
+
 function metaMessage(statusCode) {
-    switch(statusCode){
-        case 200 : return "Success";
-        case 400 : return "Bad Request";
-        case 401 : return "Unauthorized";
-        case 404 : return " Not Found";
-        case 429 : return "Too Many Requests";
-        case 500 : return "Internal Server Error";
-        case 502 : return "Bad Gateway";
-        case 503 : return "Service Unavailable";
-    };
+    switch (statusCode) {
+        case 200: return "Success";
+        case 400: return "Bad Request";
+        case 401: return "Unauthorized";
+        case 404: return "Not Found";
+        case 429: return "Too Many Requests";
+        case 500: return "Internal Server Error";
+        case 502: return "Bad Gateway";
+        case 503: return "Service Unavailable";
+        default: return "Unknown Status";
+    }
 }
+
+module.exports = { metaMessage };
+
 mongoose.connect(process.env.MONGO_URL).then(
 () => {console.log("connected to mongoDb")}
 ).catch(() => {console.log("Not connected to mongoDb")});
+const router = require("./router/user");
+
+app.use("/api",router);
 
 app.get("/",function getFunc(req,res) {
     res.send("Helloo worlddd");
