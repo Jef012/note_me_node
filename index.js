@@ -5,7 +5,7 @@ const mongoose = require("mongoose");
 require("dotenv").config();
 const noteSchema = require("./models/note");
 const moment = require("moment-timezone");
-
+const {restrictToLoggedinUserOnly} = require("./middlewares/auth");
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
@@ -37,7 +37,7 @@ app.get("/",function getFunc(req,res) {
     res.send("Helloo worlddd");
 });
 
-app.get("/api/notes/list", async function getFunc(req,res) {
+app.get("/api/notes/list",restrictToLoggedinUserOnly, async function getFunc(req,res) {
     const userId = req.query.userId;
     const date = req.query.date;
     try {

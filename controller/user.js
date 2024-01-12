@@ -46,30 +46,30 @@ async function handleUserLogin(req, res) {
         const user = await User.findOne({
          email, password
         });
-        const sessionId = uuidv4();
-        setUser(sessionId,user);
-        await User.findOneAndUpdate({email},{token : sessionId},{new : true});
+
+       const token = setUser(user);
+       console.log(" Token :: ",token);
+        await User.findOneAndUpdate({email},{token : token},{new : true});
         const response = {
             meta: {
                 status: "true",
                 statusCode: res.statusCode,
                 message: res.statusCode
             },
-            values: {
-                userDetails : user,
-                token: sessionId
-            }
+            values: token,
         };
+
+        console.log("User set:", user);
         return res.json(response);
     } catch (error) {
-        console.error(`handleUserSignup error: ${error}`);
+        console.error(`handleUserLogin error: ${error}`);
         const response = {
             meta: {
                 status: "false",
                 statusCode: 500,
                 message: res.statusCode
             },
-            values: "Error during user signup"
+            values: "Error during user Login"
         };
 
         return res.status(500).json(response);
