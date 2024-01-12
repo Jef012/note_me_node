@@ -1,10 +1,7 @@
 const jwt = require("jsonwebtoken");
 const secret = "jefrinjohnson04@gmail.com";
-// let jwtToken = "";
 
 function setUser(user) {
-    // jwtToken = user;
-
   return jwt.sign({
     "_id": user._id,
     "email": user.email

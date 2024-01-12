@@ -26,7 +26,7 @@ function metaMessage(statusCode) {
 
 module.exports = { metaMessage };
 
-mongoose.connect(process.env.MONGO_URL).then(
+mongoose.connect(process.env.MONGO_URL,{poolSize: 10}).then(
 () => {console.log("connected to mongoDb")}
 ).catch(() => {console.log("Not connected to mongoDb")});
 const router = require("./router/user");
