@@ -45,11 +45,11 @@ async function handleUserLogin(req, res) {
     try {
         const user = await User.findOne({
          email, password
-        }).maxTimeMS(20000);
+        });
 
        const token = setUser(user);
        console.log(" Token :: ",token);
-        await User.findOneAndUpdate({email},{token : token},{new : true}).maxTimeMS(20000);
+        await User.findOneAndUpdate({email},{token : token},{new : true});
         const response = {
             meta: {
                 status: "true",
