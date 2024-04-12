@@ -5,7 +5,7 @@ const mongoose = require("mongoose");
 require("dotenv").config();
 const noteSchema = require("./models/note");
 const moment = require("moment-timezone");
-const {restrictToLoggedinUserOnly} = require("./middlewares/auth");
+const { restrictToLoggedinUserOnly } = require("./middlewares/auth");
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
@@ -31,48 +31,55 @@ mongoose.connect(process.env.MONGO_URL).then(
 ).catch(() => {console.log("Not connected to mongoDb")});
 const router = require("./router/user");
 
+
 app.use("/api",router);
+
+app.use("/api/user", router);
 
 app.get("/",function getFunc(req,res) {
     res.send("Helloo worlddd");
 });
 
-app.get("/api/notes/list",restrictToLoggedinUserOnly, async function getFunc(req,res) {
+app.get("/api/notes/list", restrictToLoggedinUserOnly, async function getFunc(req, res) {
     const userId = req.query.userId;
-    const date = req.query.date;
     try {
-        const query = {};
 
-        if (userId != null) {
-            query.userId = userId;
-             console.log(`userId ::${userId}`);
-        }
-        if (date != null) {
-            const formattedDate = moment(date).utc("tz").format('YYYY-MM-DD');
-            query.date = { $gte: formattedDate, $lt: moment(formattedDate).add(1, 'days').format('YYYY-MM-DD') };
-            console.log(`date ::${formattedDate}`);
-        }
+        const notes = await noteSchema.find({ userId:userId });
 
-
-        const notes = await noteSchema.find(query);
-
-        const response = {meta:{
-            status:"true",
-            statusCode:res.statusCode,
-            message: metaMessage(res.statusCode)
-        },values:notes
-    }
+        const response = {
+            meta: {
+                status: "true",
+                statusCode: res.statusCode,
+                message: metaMessage(res.statusCode)
+            },
+            values: notes
+        };
         res.json(response);
 
     } catch (error) {
-        console.log(`getNote ::${error}`);
+        console.log(`getNote :: ${error}`);
+        // Handle errors appropriately
+        const response = {
+            meta: {
+                status: "false",
+                statusCode: 500,
+                message: "Internal Server Error"
+            },
+            values: "An error occurred while fetching notes"
+        };
+        res.status(500).json(response);
     }
 });
 
-app.post("/api/notes/add", async function postFunc(req,res) {
 
+
+
+//  app.post("/api/notes/add", async function postFunc(req,res) {
+      app.post("/api/notes/add", restrictToLoggedinUserOnly, async function postFunc(req, res) {
     const userInput = req.body;
-  await noteSchema.deleteOne({userId: req.body.userId});
+
+
+
     const newNote = new noteSchema({
         userId: userInput.userId,
         title: userInput.title,
@@ -86,6 +93,7 @@ app.post("/api/notes/add", async function postFunc(req,res) {
     message:metaMessage(res.statusCode)
 },values:newNote
 }
+console.log(response,"<<<<<<<response")
 res.json(response);
 
 });
@@ -102,4 +110,4 @@ app.delete("/api/notes/delete",async function deleteFunc(req,res){
 res.json(response);
 })
 
-app.listen(5000,()=> console.log("Server started"));
+app.listen(5000,"192.168.5.108",()=> console.log("Server started"));

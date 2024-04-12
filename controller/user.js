@@ -2,24 +2,29 @@ const User = require("../models/user");
 const metaMessage = require("../index");
 const { v4: uuidv4 } = require('uuid');
 const {setUser} = require("../service/auth");
+const jwt = require("jsonwebtoken");
+require("dotenv").config();
+
 
 //SignUp
 async function handleUserSignup(req, res) {
     const { name, email, password } = req.body;
-
     try {
         // Create a new user
         const newUser = await User.create({
             name, email, password
         });
+        const token = setUser(newUser);
+        console.log(" Token :: ",token);
+        await User.findOneAndUpdate({email},{token : token},{new : true});
 
         const response = {
             meta: {
                 status: "true",
                 statusCode: res.statusCode,
-                message: res.statusCode
+                message: "User signedIn successfully"
             },
-            values: newUser
+            values: token,
         };
 
         return res.json(response);
@@ -29,12 +34,12 @@ async function handleUserSignup(req, res) {
             meta: {
                 status: "false",
                 statusCode: 500,
-                message:res.statusCode
+                message: "Something went wrong"
             },
-            values: "Error during user signup"
+            values: ""
         };
 
-        return res.status(500).json(response);
+        return res.json(response);
     }
 }
 
@@ -49,14 +54,15 @@ async function handleUserLogin(req, res) {
 
        const token = setUser(user);
        console.log(" Token :: ",token);
-        await User.findOneAndUpdate({email},{token : token},{new : true});
+      const data = await User.findOneAndUpdate({email},{token : token},{new : true});
+
         const response = {
             meta: {
                 status: "true",
                 statusCode: res.statusCode,
                 message: res.statusCode
             },
-            values: token,
+            values: data
         };
 
         console.log("User set:", user);
@@ -66,17 +72,62 @@ async function handleUserLogin(req, res) {
         const response = {
             meta: {
                 status: "false",
-                statusCode: 500,
-                message: res.statusCode
+                statusCode: res.statusCode,
+                message: "Something went wrong"
             },
-            values: "Error during user Login"
+            values: ""
         };
 
         return res.status(500).json(response);
     }
 }
 
+//Logout
+async function logout(req, res) {
+    const authToken = req.headers.authorization;
+    try {
+        const token = authToken.slice(7);
+        if(!token){
+            return res.status(401).json({message: "Authorization token missing"})
+        }else{
+            const decoder = jwt.verify(token,process.env.SECRET_KEY);
+            console.log("Decoder >>",decoder);
+            const email = decoder.email;
+            const user = await User.findOne({email});
+
+        await User.findOneAndUpdate({email},{token : ""},{new : true});
+        const response = {
+          meta: {
+            status: "true",
+            statusCode: res.statusCode,
+            message: "Logout successful",
+          },
+          values: token,
+        };
+
+        res.json(response);
+    }
+    } catch (error) {
+        console.error(`UserLogout error: ${error}`);
+        const response = {
+            meta: {
+                status: "false",
+                statusCode: 500,
+                message: "Error during user logout"
+            },
+            values: ""
+        };
+        return res.status(500).json(response);
+    }
+
+  }
+
+
+
+
+
 module.exports = {
     handleUserSignup,
     handleUserLogin,
+    logout
 };
