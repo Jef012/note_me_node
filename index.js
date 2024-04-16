@@ -75,10 +75,8 @@ app.get("/api/notes/list", restrictToLoggedinUserOnly, async function getFunc(re
 
 
 //  app.post("/api/notes/add", async function postFunc(req,res) {
-      app.post("/api/notes/add", restrictToLoggedinUserOnly, async function postFunc(req, res) {
+app.post("/api/notes/add", restrictToLoggedinUserOnly, async function postFunc(req, res) {
     const userInput = req.body;
-
-
 
     const newNote = new noteSchema({
         userId: userInput.userId,
@@ -95,8 +93,59 @@ app.get("/api/notes/list", restrictToLoggedinUserOnly, async function getFunc(re
 }
 console.log(response,"<<<<<<<response")
 res.json(response);
-
 });
+
+
+app.put("/api/notes/edit/:noteId", restrictToLoggedinUserOnly, async function(req, res) {
+    const noteId = req.params.noteId;
+    const { userId, title, content } = req.body;
+
+    try {
+
+        const existingNote = await noteSchema.findOne({ _id: noteId, userId: userId });
+
+        if (!existingNote) {
+
+            const response = {
+                meta: {
+                    status: "false",
+                    statusCode: 404,
+                    message: "Note not found"
+                },
+                values: "Note not found"
+            };
+            return res.status(404).json(response);
+        }
+
+        existingNote.title = title;
+        existingNote.content = content;
+        await existingNote.save();
+
+        const response = {
+            meta: {
+                status: "true",
+                statusCode: res.statusCode,
+                message: metaMessage(res.statusCode)
+            },
+            values: existingNote
+        };
+        res.json(response);
+
+    } catch (error) {
+        console.log(`editNote :: ${error}`);
+        // Handle errors appropriately
+        const response = {
+            meta: {
+                status: "false",
+                statusCode: 500,
+                message: "Internal Server Error"
+            },
+            values: "An error occurred while editing the note"
+        };
+        res.status(500).json(response);
+    }
+});
+
 
 app.delete("/api/notes/delete",async function deleteFunc(req,res){
     const userId = req.query.userId;
