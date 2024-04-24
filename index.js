@@ -72,9 +72,6 @@ app.get("/api/notes/list", restrictToLoggedinUserOnly, async function getFunc(re
 });
 
 
-
-
-//  app.post("/api/notes/add", async function postFunc(req,res) {
 app.post("/api/notes/add", restrictToLoggedinUserOnly, async function postFunc(req, res) {
     const userInput = req.body;
 
