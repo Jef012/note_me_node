@@ -4,83 +4,155 @@ const { v4: uuidv4 } = require('uuid');
 const {setUser} = require("../service/auth");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
+const bcrypt = require("bcrypt");
 
 
 //SignUp
 async function handleUserSignup(req, res) {
-    const { name, email, password } = req.body;
+    const { mobile, email, password } = req.body;
     try {
-        // Create a new user
-        const newUser = await User.create({
-            name, email, password
-        });
-        const token = setUser(newUser);
-        console.log(" Token :: ",token);
-        await User.findOneAndUpdate({email},{token : token},{new : true});
 
-        const response = {
-            meta: {
-                status: "true",
-                statusCode: res.statusCode,
-                message: "User signedIn successfully"
-            },
-            values: token,
-        };
+    //   const existingUser = await User.findOne({
+    //     $or: [{ email }, { mobile }],
+    //   });
 
-        return res.json(response);
+    //   if (existingUser) {
+    //     return res.status(400).json({
+    //       meta: {
+    //         status: "false",
+    //         statusCode: 400,
+    //         message: "Email or mobile number already in use",
+    //       },
+    //       values: "",
+    //     });
+    //   }
+
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      const newUser = await User.create({
+        mobile,
+        email,
+        password: hashedPassword,
+      });
+      const token = setUser(newUser);
+      return res.status(201).json({
+        meta: {
+          status: "true",
+          statusCode: 200,
+          message: "User signed up successfully",
+        },
+        values: {
+            mobile,email,token
+        },
+      });
     } catch (error) {
-        console.error(`handleUserSignup error: ${error}`);
-        const response = {
-            meta: {
-                status: "false",
-                statusCode: 500,
-                message: "Something went wrong"
-            },
-            values: ""
-        };
-
-        return res.json(response);
+      console.error(`handleUserSignup error: ${error}`);
+      return res.status(500).json({
+        meta: {
+          status: "false",
+          statusCode: 500,
+          message: "Internal server error",
+        },
+        values: "",
+      });
     }
-}
+  }
 
 //Login
 async function handleUserLogin(req, res) {
-    const {email, password } = req.body;
+    const { email, password } = req.body;
 
     try {
-        const user = await User.findOne({
-         email, password
-        });
+        const user = await User.findOne({ email });
 
-       const token = setUser(user);
-       console.log(" Token :: ",token);
-      const data = await User.findOneAndUpdate({email},{token : token},{new : true});
+        if (!user) {
+            return res.status(404).json({
+                meta: {
+                    status: "false",
+                    statusCode: 404,
+                    message: "User not found",
+                },
+                values: "",
+            });
+        }
+
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+
+        if (!isPasswordValid) {
+            return res.status(401).json({
+                meta: {
+                    status: "false",
+                    statusCode: 401,
+                    message: "Incorrect password",
+                },
+                values: "",
+            });
+        }
+
+        const token = setUser(user);
+        await User.findOneAndUpdate({ email }, { token }, { new: true });
 
         const response = {
             meta: {
                 status: "true",
                 statusCode: res.statusCode,
-                message: res.statusCode
+                message: "Login successful",
             },
-            values: data
+            values: { token, user },
         };
 
-        console.log("User set:", user);
         return res.json(response);
     } catch (error) {
         console.error(`handleUserLogin error: ${error}`);
-        const response = {
+        return res.status(500).json({
             meta: {
                 status: "false",
-                statusCode: res.statusCode,
-                message: "Something went wrong"
+                statusCode: 500,
+                message: "Something went wrong during login",
             },
-            values: ""
-        };
-
-        return res.status(500).json(response);
+            values: "",
+        });
     }
 }
+
+
+// async function handleUserLogin(req, res) {
+//     const {email, password } = req.body;
+
+//     try {
+//         const user = await User.findOne({
+//          email, password
+//         });
+
+//        const token = setUser(user);
+//        console.log(" Token :: ",token);
+//       const data = await User.findOneAndUpdate({email},{token : token},{new : true});
+
+//         const response = {
+//             meta: {
+//                 status: "true",
+//                 statusCode: res.statusCode,
+//                 message: res.statusCode
+//             },
+//             values: data
+//         };
+
+//         console.log("User set:", user);
+//         return res.json(response);
+//     } catch (error) {
+//         console.error(`handleUserLogin error: ${error}`);
+//         const response = {
+//             meta: {
+//                 status: "false",
+//                 statusCode: res.statusCode,
+//                 message: "Something went wrong"
+//             },
+//             values: ""
+//         };
+
+//         return res.status(500).json(response);
+//     }
+// }
 
 //Logout
 async function logout(req, res) {

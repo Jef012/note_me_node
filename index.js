@@ -156,4 +156,5 @@ app.delete("/api/notes/delete",async function deleteFunc(req,res){
 res.json(response);
 })
 
-app.listen(5000,()=> console.log("Server started"));
+// app.listen(5000,()=> console.log("Server started"));
+app.listen(5000,"192.168.5.108",()=> console.log("Server started"));

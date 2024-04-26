@@ -5,7 +5,8 @@ const secret = "jefrinjohnson04@gmail.com";
 function setUser(user) {
   return jwt.sign({
     "_id": user._id,
-    "email": user.email
+    "email": user.email,
+    "mobile": user.mobile,
   },process.env.SECRET_KEY);
 }
 
